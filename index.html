@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>前端工具箱</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- 配置Tailwind自定义主题，与base64toimg.html保持一致 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        neutral: '#1F2937',
+                        light: '#F3F4F6',
+                        danger: '#EF4444'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .bg-gradient-primary {
+                background: linear-gradient(135deg, #3B82F6 0%, #2575fc 100%);
+            }
+        }
+    </style>
+</head>
+<body class="font-inter bg-gray-50 text-neutral min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- 头部区域 -->
+        <header class="text-center py-8 mb-6">
+            <div class="bg-gradient-primary rounded-3xl p-10 shadow-lg mb-8">
+                <h1 class="text-[clamp(1.8rem,4vw,3rem)] font-bold text-white mb-4 text-shadow">前端工具箱</h1>
+                <p class="text-white/90 text-[clamp(1rem,2vw,1.2rem)] max-w-2xl mx-auto">
+                    一站式前端开发工具集合，提高您的开发效率
+                </p>
+            </div>
+            
+            <!-- 搜索框 -->
+            <div class="max-w-2xl mx-auto">
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        placeholder="搜索工具..." 
+                        class="w-full px-5 py-4 pr-12 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none shadow-sm transition-all"
+                    >
+                    <button class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary transition-colors">
+                        <i class="fa fa-search text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+        
+        <!-- 工具网格 -->
+        <div class="tools-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-8">
+            <!-- 工具卡片将由JavaScript动态生成 -->
+        </div>
+    </div>
+    
+    <!-- 页脚 -->
+    <footer class="bg-neutral text-gray-400 py-8 mt-16">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <p class="text-sm">© 2023 前端工具箱 - 为您提供便捷的开发体验</p>
+                </div>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">使用条款</a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">隐私政策</a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">联系我们</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 工具数据
+        const tools = [
+            {
+                title: "base64转图片",
+                description: "base64转图片，支持多种格式",
+                icon: "fa-image",
+                link: "图片工具/base64toimg.html",
+                tags: ["图片", "转换", "base64"]
+            },
+            {
+                title: "json格式化",
+                description: "json格式化工具，支持格式化、压缩、美化等操作",
+                icon: "fa-exchange",
+                link: "json格式化工具/json-formatter.html",
+                tags: ["json", "格式化", "转换"]
+            },
+            {
+                title: "XML格式化工具",
+                description: "XML格式化工具，支持格式化、压缩、美化等操作",
+                icon: "fa-crop",
+                link: "XML格式化工具/xml-formatter.html",
+                tags: ["xml", "格式化", "转换"]
+            },
+            {
+                title: "webservice调试",
+                description: "webservice调试工具，支持多种协议和格式",
+                icon: "fa-crop",
+                link: "网络工具/webservice-tester.html",
+                tags: ["webservice", "调试", "测试"]
+            }
+        ];
+
+        // 渲染工具卡片
+        function renderTools(toolsArray) {
+            const toolsGrid = document.querySelector('.tools-grid');
+            toolsGrid.innerHTML = '';
+            
+            toolsArray.forEach(tool => {
+                const toolCard = document.createElement('div');
+                toolCard.className = 'bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer';
+                toolCard.onclick = () => window.location.href = tool.link;
+                
+                toolCard.innerHTML = `
+                    <div class="h-36 bg-primary/5 flex items-center justify-center">
+                        <i class="fa ${tool.icon} text-5xl text-primary"></i>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="text-lg font-semibold text-neutral mb-2">${tool.title}</h3>
+                        <p class="text-gray-600 text-sm mb-4 line-clamp-2">${tool.description}</p>
+                        <div class="flex flex-wrap gap-2">
+                            ${tool.tags.map(tag => `
+                                <span class="bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">${tag}</span>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                
+                toolsGrid.appendChild(toolCard);
+            });
+        }
+
+        // 搜索功能
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            
+            if (searchTerm === '') {
+                renderTools(tools);
+                return;
+            }
+            
+            const filteredTools = tools.filter(tool => 
+                tool.title.toLowerCase().includes(searchTerm) ||
+                tool.description.toLowerCase().includes(searchTerm) ||
+                tool.tags.some(tag => tag.toLowerCase().includes(searchTerm))
+            );
+            
+            renderTools(filteredTools);
+        });
+
+        // 初始渲染
+        renderTools(tools);
+    </script>
+</body>
+</html>
