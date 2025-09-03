@@ -53,18 +53,16 @@
                 </p>
             </div>
             
-            <!-- 搜索框 -->
-            <div class="max-w-2xl mx-auto">
-                <div class="relative">
-                    <input 
-                        type="text"
-                        id="searchInput"
-                        placeholder="搜索工具..."
-                        class="w-full px-5 py-4 pr-12 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none shadow-sm transition-all"
-                    >
-                    <button class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary transition-colors">
-                        <i class="fa fa-search text-xl"></i>
-                    </button>
+            <!-- 搜索框区域 -->
+            <div class="max-w-2xl mx-auto px-4">
+                <div class="relative mt-8">
+                    <input type="text" id="searchInput" placeholder="搜索工具..." class="w-full py-3 px-4 pr-10 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                    <i class="fa fa-search absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                </div>
+
+                <!-- 添加分类筛选区域 -->
+                <div class="mt-4 flex flex-wrap gap-2" id="categoryFilters">
+                    <!-- 分类按钮将通过JS动态生成 -->
                 </div>
             </div>
         </header>
@@ -103,10 +101,24 @@
     </footer>
 
     <script>
+        // 全局变量存储工具数据和分类
+        let allTools = [];
+        let currentCategory = 'all';
+
         // 渲染工具卡片
         function renderTools(toolsArray) {
             const toolsGrid = document.querySelector('.tools-grid');
             toolsGrid.innerHTML = '';
+            
+            if (toolsArray.length === 0) {
+                toolsGrid.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <i class="fa fa-search text-5xl text-gray-300 mb-4"></i>
+                        <p class="text-xl text-gray-500">未找到匹配的工具</p>
+                    </div>
+                `;
+                return;
+            }
             
             toolsArray.forEach(tool => {
                 const toolCard = document.createElement('div');
@@ -207,33 +219,75 @@
             });
         });
 
-
-        // 从tools.json加载工具数据
-        fetch('tools.json')
-            .then(response => response.json())
-            .then(data => {
-                const tools = data;
-                renderTools(tools);
-                
-                // 搜索功能
-                document.getElementById('searchInput').addEventListener('input', function(e) {
-                    const searchTerm = e.target.value.toLowerCase();
+        // 加载分类数据
+        function loadCategories() {
+            fetch('classify.json')
+                .then(response => response.json())
+                .then(data => {
+                    const categoryContainer = document.getElementById('categoryFilters');
+                    // 添加全部分类按钮
+                    const allButton = document.createElement('button');
+                    allButton.className = 'category-btn px-3 py-1 rounded-full bg-primary text-white text-sm';
+                    allButton.textContent = '全部';
+                    allButton.dataset.category = 'all';
+                    allButton.addEventListener('click', () => filterByCategory('all'));
+                    categoryContainer.appendChild(allButton);
                     
-                    if (searchTerm === '') {
-                        renderTools(tools);
-                        return;
-                    }
-                    
-                    const filteredTools = tools.filter(tool => 
-                        tool.title.toLowerCase().includes(searchTerm) ||
-                        tool.description.toLowerCase().includes(searchTerm) ||
-                        tool.tags.some(tag => tag.toLowerCase().includes(searchTerm))
-                    );
-                    
-                    renderTools(filteredTools);
+                    data.categories.forEach(category => {
+                        const button = document.createElement('button');
+                        button.className = 'category-btn px-3 py-1 rounded-full bg-gray-200 text-gray-700 text-sm';
+                        button.textContent = category.name;
+                        button.dataset.category = category.id;
+                        button.addEventListener('click', () => filterByCategory(category.id));
+                        categoryContainer.appendChild(button);
+                    });
                 });
-            })
-            .catch(error => console.error('加载工具数据失败:', error));
+        }
+
+        // 分类筛选函数
+        function filterByCategory(category) {
+            currentCategory = category;
+            // 更新按钮样式
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                if (btn.dataset.category === category) {
+                    btn.classList.add('bg-primary', 'text-white');
+                    btn.classList.remove('bg-gray-200', 'text-gray-700');
+                } else {
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.classList.add('bg-gray-200', 'text-gray-700');
+                }
+            });
+            // 应用筛选
+            applyFilters();
+        }
+
+        // 综合搜索和分类筛选
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filteredTools = allTools.filter(tool => {
+                const matchesSearch = tool.title.toLowerCase().includes(searchTerm) || tool.description.toLowerCase().includes(searchTerm);
+                const matchesCategory = currentCategory === 'all' || tool.category === currentCategory;
+                return matchesSearch && matchesCategory;
+            });
+            renderTools(filteredTools);
+        }
+
+        // 修改工具加载和初始化逻辑
+        function loadTools() {
+            fetch('tools.json')
+                .then(response => response.json())
+                .then(data => {
+                    allTools = data;
+                    renderTools(allTools);
+                    // 初始化分类筛选
+                    loadCategories();
+                    // 添加搜索框事件监听
+                    document.getElementById('searchInput').addEventListener('input', applyFilters);
+                });
+        }
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', loadTools);
     </script>
 </body>
 </html>
