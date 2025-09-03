@@ -8,7 +8,7 @@
     <link rel="icon" href="/icon/easytools.ico" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     
-    <!-- 配置Tailwind自定义主题，与base64toimg.html保持一致 -->
+    <!-- 配置Tailwind自定义主题 -->
     <script>
         tailwind.config = {
             theme: {
@@ -57,9 +57,9 @@
             <div class="max-w-2xl mx-auto">
                 <div class="relative">
                     <input 
-                        type="text" 
-                        id="searchInput" 
-                        placeholder="搜索工具..." 
+                        type="text"
+                        id="searchInput"
+                        placeholder="搜索工具..."
                         class="w-full px-5 py-4 pr-12 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none shadow-sm transition-all"
                     >
                     <button class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary transition-colors">
@@ -72,6 +72,17 @@
         <!-- 工具网格 -->
         <div class="tools-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-8">
             <!-- 工具卡片将由JavaScript动态生成 -->
+        </div>
+
+        <!-- 工具内容容器 -->
+        <div id="toolContent" class="mt-12 hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 id="toolTitle" class="text-2xl font-bold text-neutral"></h2>
+                <button id="backToTools" class="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-md transition-colors flex items-center shadow-sm">
+                    <i class="fa fa-arrow-left mr-1"></i> 返回工具列表
+                </button>
+            </div>
+            <div id="toolContentArea" class="bg-white rounded-xl shadow-md p-6 min-h-[500px]"></div>
         </div>
     </div>
     
@@ -92,38 +103,6 @@
     </footer>
 
     <script>
-        // 工具数据
-        const tools = [
-            {
-                title: "base64转图片",
-                description: "base64转图片，支持多种格式",
-                icon: "fa-image",
-                link: "图片工具/base64toimg.html",
-                tags: ["图片", "转换", "base64"]
-            },
-            {
-                title: "json格式化",
-                description: "json格式化工具，支持格式化、压缩、美化等操作",
-                icon: "fa-exchange",
-                link: "json格式化工具/json-formatter.html",
-                tags: ["json", "格式化", "转换"]
-            },
-            {
-                title: "XML格式化工具",
-                description: "XML格式化工具，支持格式化、压缩、美化等操作",
-                icon: "fa-crop",
-                link: "XML格式化工具/xml-formatter.html",
-                tags: ["xml", "格式化", "转换"]
-            },
-            {
-                title: "webservice调试",
-                description: "webservice调试工具，支持多种协议和格式",
-                icon: "fa-crop",
-                link: "网络工具/webservice-tester.html",
-                tags: ["webservice", "调试", "测试"]
-            }
-        ];
-
         // 渲染工具卡片
         function renderTools(toolsArray) {
             const toolsGrid = document.querySelector('.tools-grid');
@@ -132,7 +111,7 @@
             toolsArray.forEach(tool => {
                 const toolCard = document.createElement('div');
                 toolCard.className = 'bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer';
-                toolCard.onclick = () => window.location.href = tool.link;
+                toolCard.onclick = () => loadToolContent(tool);
                 
                 toolCard.innerHTML = `
                     <div class="h-36 bg-primary/5 flex items-center justify-center">
@@ -153,26 +132,108 @@
             });
         }
 
-        // 搜索功能
-        document.getElementById('searchInput').addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            
-            if (searchTerm === '') {
-                renderTools(tools);
-                return;
+        // 加载工具内容
+        function loadToolContent(tool) {
+            // 显示加载状态
+            document.querySelector('.tools-grid').classList.add('hidden');
+            document.getElementById('toolContent').classList.remove('hidden');
+            document.getElementById('toolTitle').textContent = tool.title;
+            document.getElementById('toolContentArea').innerHTML = '<div class="flex justify-center items-center h-64"><div class="w-12 h-12 border-4 border-gray-200 border-t-primary rounded-full animate-spin"></div></div>';
+
+            // 使用ID选择器隐藏搜索框容器
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                const searchContainer = searchInput.closest('.max-w-2xl.mx-auto');
+                if (searchContainer) {
+                    searchContainer.classList.add('hidden');
+                }
             }
-            
-            const filteredTools = tools.filter(tool => 
-                tool.title.toLowerCase().includes(searchTerm) ||
-                tool.description.toLowerCase().includes(searchTerm) ||
-                tool.tags.some(tag => tag.toLowerCase().includes(searchTerm))
-            );
-            
-            renderTools(filteredTools);
+
+            // 加载工具页面内容
+            fetch(tool.link)
+                .then(response => response.text())
+                .then(html => {
+                    // 解析HTML并提取主要内容
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const mainContent = doc.querySelector('main').innerHTML;
+                    
+                    // 将内容插入到容器
+                    document.getElementById('toolContentArea').innerHTML = mainContent;
+                    
+                    // 自动滚动到工具内容区域
+                    document.getElementById('toolContent').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    
+                    // 执行工具页面中的脚本
+                    const scripts = doc.querySelectorAll('main script');
+                    scripts.forEach(script => {
+                        const newScript = document.createElement('script');
+                        Array.from(script.attributes).forEach(attr => {
+                            newScript.setAttribute(attr.name, attr.value);
+                        });
+                        newScript.textContent = script.textContent;
+                        document.getElementById('toolContentArea').appendChild(newScript);
+                    });
+                })
+                .catch(error => {
+                    document.getElementById('toolContentArea').innerHTML = `
+                        <div class="text-center py-12">
+                            <i class="fa fa-exclamation-triangle text-5xl text-danger mb-4"></i>
+                            <p class="text-xl text-gray-700">加载工具失败</p>
+                            <p class="text-gray-500 mt-2">${error.message}</p>
+                        </div>
+                    `;
+                });
+        }
+
+
+        // 返回工具列表
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('backToTools').addEventListener('click', () => {
+                document.querySelector('.tools-grid').classList.remove('hidden');
+                document.getElementById('toolContent').classList.add('hidden');
+
+                // 使用ID选择器显示搜索框容器
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput) {
+                    const searchContainer = searchInput.closest('.max-w-2xl.mx-auto');
+                    if (searchContainer) {
+                        searchContainer.classList.remove('hidden');
+                    }
+                }
+
+                // 滚动到页面顶部
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
         });
 
-        // 初始渲染
-        renderTools(tools);
+
+        // 从tools.json加载工具数据
+        fetch('tools.json')
+            .then(response => response.json())
+            .then(data => {
+                const tools = data;
+                renderTools(tools);
+                
+                // 搜索功能
+                document.getElementById('searchInput').addEventListener('input', function(e) {
+                    const searchTerm = e.target.value.toLowerCase();
+                    
+                    if (searchTerm === '') {
+                        renderTools(tools);
+                        return;
+                    }
+                    
+                    const filteredTools = tools.filter(tool => 
+                        tool.title.toLowerCase().includes(searchTerm) ||
+                        tool.description.toLowerCase().includes(searchTerm) ||
+                        tool.tags.some(tag => tag.toLowerCase().includes(searchTerm))
+                    );
+                    
+                    renderTools(filteredTools);
+                });
+            })
+            .catch(error => console.error('加载工具数据失败:', error));
     </script>
 </body>
 </html>
